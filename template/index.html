@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Word Cloud</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
+    <!-- <script src="https://code.jquery.com/jquery-2.2.4.js" integrity="sha256-iT6Q9iMJYuQiMWNd9lDyBUStIq/8PuOW33aOqmvFpqI=" crossorigin="anonymous"></script> -->
+    <!-- <script src="https://code.jquery.com/jquery-1.9.1.min.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.js"></script>
+    
+    <script src="{{ url_for('static', filename='lib/d3/d3.js') }}" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='lib/d3/d3.layout.cloud.js') }}"></script>
+    <script src="{{ url_for('static', filename='d3.wordcloud.js') }}"></script>
+</head>
+
+<body style="text-align: center">
+    <h1>Welcome to Word Cloud City</h1>
+    <hr>
+
+    <label for="basic-url">Your URL</label>
+    <div class="container">
+        <div class="input-group mb-3 col-offset-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text" id="basic-addon3">https://example.com</span>
+            </div>
+            <input type="text" id="url" style="width: 77%">
+            <button type="button" class="btn btn-success" id="submit">Submit!</button>    
+        </div>
+    
+        <div class="">
+            <div class="form-group">
+                <label for="exampleTextarea">Enter Text Here</label>
+                <textarea class="form-control" id="paragraphs" rows="3" style="height:250px"></textarea>
+            </div>
+            <button type="button" class="btn btn-success" id="analyze">Analyze!</button>
+        </div>
+    </div>
+        
+    <br>
+
+    <div id='wordcloud'></div>
+    
+    <script>
+        function grabData() {
+            url = document.getElementById('url').value
+            // ajax the JSON to the server
+            $.get("/receiver", {url: url}) 
+                .then(function (data) {
+                    var words = data.commonWords
+                    // console.log(words)
+
+                    var newWords = []
+                    for (let word in words) {
+                        word
+                        newWords.push({ text: word, size: words[word] })
+                    }
+                    console.log('new words:', newWords)
+
+                    if(newWords.length > 0) {
+                        d3.wordcloud()
+                        .size([500, 500])
+                        .fill(d3.scale.ordinal().range(["#884400", "#448800", "#888800", "#444400"]))
+                        .words(newWords)
+                        .onwordclick(function (d, i) {
+                            if (d.href) { window.location = d.href; }
+                        })
+                        .start();
+                    }
+                })
+                .fail(function (data) {
+                    alert('This is not a valid URL')
+                })
+        }
+
+        function grabTokens(paragraphs) {
+            paragraphs = document.getElementById('paragraphs').value
+            // console.log([paragraphs])
+            // ajax the JSON to the server
+            $.get("/tokens", {paragraphs: paragraphs}) 
+                .then(function (data) {
+                    var words = data.commonWords
+                    // console.log(words)
+
+                    var newWords = []
+                    for (let word in words) {
+                        word
+                        newWords.push({ text: word, size: words[word] })
+                    }
+                    console.log('new words:', newWords)
+
+                    d3.wordcloud()
+                        .size([500, 500])
+                        .fill(d3.scale.ordinal().range(["#884400", "#448800", "#888800", "#444400"]))
+                        .words(newWords)
+                        .onwordclick(function (d, i) {
+                            if (d.href) { window.location = d.href; }
+                        })
+                        .start();
+
+                })
+        }
+
+        window.onload = function () {
+            // setup the button click
+            document.getElementById("submit").onclick = function () {
+                grabData()
+            };
+            document.getElementById("analyze").onclick = function () {
+                // url = document.getElementById('paragraphs').value
+                grabTokens()
+            };
+        }
+    </script>
+</body>
+
+</html>
